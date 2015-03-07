@@ -30,7 +30,7 @@ class SQLObject
 
   def self.table_name
     return @table_name if @table_name
-    self.name.to_s.tableize
+    self.name.tableize
   end
 
   def self.all
