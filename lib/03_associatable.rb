@@ -44,6 +44,8 @@ module Associatable
       target_model_class = options.send(:model_class)
       target_model_class.where({ id: foreign_key }).first
     end
+
+    assoc_options[name] = options
   end
 
   def has_many(name, options = {})
@@ -57,7 +59,7 @@ module Associatable
   end
 
   def assoc_options
-    # Wait to implement this in Phase IVa. Modify `belongs_to`, too.
+    @assoc_options ||= {}
   end
 end
 
