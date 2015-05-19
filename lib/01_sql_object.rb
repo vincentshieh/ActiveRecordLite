@@ -1,9 +1,17 @@
 require_relative 'db_connection'
 require 'active_support/inflector'
-# NB: the attr_accessor we wrote in phase 0 is NOT used in the rest
-# of this project. It was only a warm up.
 
 class SQLObject
+  def self.all
+    results = DBConnection.execute(<<-SQL)
+      SELECT
+        #{table_name}.*
+      FROM
+        #{table_name}
+    SQL
+    parse_all(results)
+  end
+
   def self.columns
     columns = DBConnection.execute2(<<-SQL)
       SELECT
@@ -24,29 +32,6 @@ class SQLObject
     end
   end
 
-  def self.table_name=(table_name)
-    @table_name = table_name
-  end
-
-  def self.table_name
-    return @table_name if @table_name
-    self.name.tableize
-  end
-
-  def self.all
-    results = DBConnection.execute(<<-SQL)
-      SELECT
-        #{table_name}.*
-      FROM
-        #{table_name}
-    SQL
-    parse_all(results)
-  end
-
-  def self.parse_all(results)
-    results.map { |attributes| self.new(attributes) }
-  end
-
   def self.find(id)
     result = DBConnection.execute(<<-SQL)
       SELECT
@@ -58,6 +43,19 @@ class SQLObject
     SQL
     attributes = result.first
     attributes ? self.new(attributes) : nil
+  end
+
+  def self.parse_all(results)
+    results.map { |attributes| self.new(attributes) }
+  end
+
+  def self.table_name
+    return @table_name if @table_name
+    self.name.tableize
+  end
+
+  def self.table_name=(table_name)
+    @table_name = table_name
   end
 
   def initialize(params = {})
@@ -91,6 +89,15 @@ class SQLObject
     self.send("id=", DBConnection.last_insert_row_id)
   end
 
+  def save
+    obj_id = self.send("id")
+    if obj_id
+      update
+    else
+      insert
+    end
+  end
+
   def update
     set_line = self.class.columns.map do |attr_name|
       "#{attr_name} = ?"
@@ -104,14 +111,5 @@ class SQLObject
     WHERE
       id = ?
     SQL
-  end
-
-  def save
-    obj_id = self.send("id")
-    if obj_id
-      update
-    else
-      insert
-    end
   end
 end
