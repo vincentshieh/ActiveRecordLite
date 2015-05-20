@@ -25,7 +25,6 @@ class SQLObject
   def self.finalize!
     columns.each do |column|
       define_method(column) { attributes[column] }
-
       define_method("#{column}=") do |val|
         attributes[column] = val
       end
